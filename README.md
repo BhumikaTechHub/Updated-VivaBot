@@ -28,48 +28,6 @@ PDF → Text Extraction → Question Generation → Question Pool
 
 ---
 
-##  Project Structure
-
-```
-ai-viva/
-├── backend/
-│   ├── main.py                 # FastAPI application entry point
-│   ├── config.py               # Configuration settings
-│   ├── database.py             # Database models & setup
-│   ├── auth.py                 # Authentication logic
-│   ├── requirements.txt        # Python dependencies
-│   ├── models/
-│   │   ├── pdf_processor.py    # PDF text extraction & chunking
-│   │   ├── question_generator.py # T5-based question generation
-│   │   ├── speech_recognizer.py  # Vosk speech recognition
-│   │   └── answer_evaluator.py   # Semantic similarity scoring
-│   ├── routers/
-│   │   ├── auth_router.py      # Login endpoints
-│   │   ├── viva_router.py      # Viva session endpoints
-│   │   └── admin_router.py     # PDF upload & admin endpoints
-│   └── uploads/                # Uploaded PDF storage
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Login.jsx       # Login page
-│   │   │   ├── Dashboard.jsx   # Student dashboard
-│   │   │   ├── VivaInterface.jsx # Exam interface
-│   │   │   ├── Microphone.jsx  # Voice recording component
-│   │   │   ├── Transcription.jsx # Real-time transcription
-│   │   │   └── Results.jsx     # Result dashboard
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   ├── index.css
-│   │   └── main.jsx
-│   ├── package.json
-│   ├── tailwind.config.js
-│   └── vite.config.js
-├── README.md
-└── task.md
-```
-
----
 
 ##  Getting Started
 
