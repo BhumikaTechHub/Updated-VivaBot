@@ -1,10 +1,10 @@
-# 🎓 AI-Powered Virtual Viva Examination System
+#  AI-Powered Virtual Viva Examination System
 
 A complete AI-powered Virtual Viva Examination System that simulates a real oral viva examination. Students answer questions verbally while the system evaluates responses automatically using state-of-the-art NLP models.
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 PDF → Text Extraction → Question Generation → Question Pool
@@ -14,7 +14,7 @@ PDF → Text Extraction → Question Generation → Question Pool
 → Result Dashboard
 ```
 
-## 🧰 Tech Stack
+##  Tech Stack
 
 | Layer      | Technology                                      |
 |------------|--------------------------------------------------|
@@ -28,7 +28,7 @@ PDF → Text Extraction → Question Generation → Question Pool
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 ai-viva/
@@ -71,7 +71,7 @@ ai-viva/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -131,7 +131,7 @@ npm run dev
 
 ---
 
-## 👥 Predefined Student Accounts
+##  Predefined Student Accounts
 
 | Username   | Password   |
 |------------|------------|
@@ -160,7 +160,7 @@ npm run dev
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 | Method | Endpoint              | Description                       |
 |--------|-----------------------|-----------------------------------|
@@ -174,7 +174,7 @@ npm run dev
 
 ---
 
-## 🧠 AI Models Used
+##  AI Models Used
 
 ### 1. PyMuPDF (fitz)
 - Extracts text from uploaded PDF textbooks
@@ -197,6 +197,6 @@ npm run dev
 
 ---
 
-## 📝 License
+##  License
 
 This project is for educational purposes.
