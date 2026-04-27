@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { vivaAPI } from '../api';
 
 export default function Results({ user, onLogout }) {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const isTerminated = queryParams.get('terminated') === 'true';
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -152,6 +155,14 @@ export default function Results({ user, onLogout }) {
       <main className="w-full px-8 py-10">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
+          {isTerminated && (
+            <div className="mb-6 p-4 rounded-xl bg-red-100 border-2 border-red-400 text-red-700 text-center font-bold shadow-sm max-w-2xl mx-auto flex items-center justify-center gap-3">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              Exam Terminated: You exceeded the allowed number of proctoring warnings.
+            </div>
+          )}
           <h2 className="text-3xl font-extrabold text-slate-900 mb-1">Viva Examination Results</h2>
           <p className="text-slate-500 font-medium">{results.student_name} · {results.total_questions} questions</p>
         </div>

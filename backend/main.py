@@ -5,7 +5,7 @@ Main FastAPI Application Entry Point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routers import auth_router, admin_router, viva_router
+from routers import auth_router, admin_router, viva_router, proctor_router
 from config import CORS_ORIGINS
 
 # Create FastAPI app
@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(auth_router.router)
 app.include_router(admin_router.router)
 app.include_router(viva_router.router)
+app.include_router(proctor_router.router)
 
 
 @app.on_event("startup")

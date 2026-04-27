@@ -62,6 +62,7 @@ class VivaSession(Base):
     started_at = Column(DateTime, default=datetime.utcnow)
     completed = Column(Boolean, default=False)
     current_question_index = Column(Integer, default=0)
+    proctor_warnings = Column(Integer, default=0)
 
     student = relationship("Student", back_populates="sessions")
     results = relationship("Result", back_populates="session")

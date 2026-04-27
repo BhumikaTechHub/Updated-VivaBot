@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { vivaAPI } from '../api';
+import { vivaAPI, proctorAPI } from '../api';
 import Avatar from './Avatar';
+import { FaceMesh } from '@mediapipe/face_mesh';
+import * as cam from '@mediapipe/camera_utils';
 
 export default function VivaInterface({ user }) {
   const { sessionId } = useParams();
@@ -18,11 +20,15 @@ export default function VivaInterface({ user }) {
   const [error, setError] = useState('');
   
   const [isAvatarSpeaking, setIsAvatarSpeaking] = useState(false);
-
+  const [proctorWarnings, setProctorWarnings] = useState(0);
+  const [proctorMessage, setProctorMessage] = useState('');
+  const [minorMessage, setMinorMessage] = useState('');
   const recognitionRef = useRef(null);
   const finalTranscriptRef = useRef('');
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const faceMeshRef = useRef(null);
+  const consecutiveOffScreenFrames = useRef(0);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -90,9 +96,140 @@ export default function VivaInterface({ user }) {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
+      if (faceMeshRef.current) {
+        faceMeshRef.current.close();
+      }
       window.speechSynthesis.cancel();
     };
   }, []);
+
+  // Initialize MediaPipe FaceMesh
+  useEffect(() => {
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    faceMesh.onResults((results) => {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        consecutiveOffScreenFrames.current += 1;
+        if (consecutiveOffScreenFrames.current > 15) { // ~1.5s at 10fps
+          setMinorMessage('Please stay visible in front of the camera');
+        }
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+      
+      // Calculate head pose (simplified)
+      // Landmarks: 1=nose, 33=left eye, 263=right eye, 61=left mouth, 291=right mouth
+      const nose = landmarks[1];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+      
+      // Yaw (side looking)
+      const eyeCenter = (leftEye.x + rightEye.x) / 2;
+      const yaw = (nose.x - eyeCenter) * 100;
+      
+      // Pitch (looking up/down)
+      const pitch = (nose.y - (leftEye.y + rightEye.y) / 2) * 100;
+
+      if (Math.abs(yaw) > 12 || Math.abs(pitch) > 10) {
+        consecutiveOffScreenFrames.current += 1;
+        if (consecutiveOffScreenFrames.current > 20) {
+          setMinorMessage('Please focus on the screen');
+        }
+      } else {
+        consecutiveOffScreenFrames.current = 0;
+      }
+    });
+
+    faceMeshRef.current = faceMesh;
+
+    let camera = null;
+    if (videoRef.current) {
+      camera = new cam.Camera(videoRef.current, {
+        onFrame: async () => {
+          if (faceMeshRef.current) {
+            await faceMeshRef.current.send({ image: videoRef.current });
+          }
+        },
+        width: 640,
+        height: 480,
+      });
+      camera.start();
+    }
+
+    return () => {
+      if (camera) camera.stop();
+    };
+  }, []);
+
+  // Ensure video stream is persistently attached to the video element whenever it renders
+  useEffect(() => {
+    if (videoRef.current && streamRef.current && videoRef.current.srcObject !== streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  });
+
+  // Proctoring polling (Continuous)
+  useEffect(() => {
+    let proctorTimer;
+    let isMounted = true;
+
+    const captureAndSendFrame = async () => {
+      // Allow polling even during submitting/skipping, just need video & stream
+      if (videoRef.current && streamRef.current && videoRef.current.videoWidth) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = videoRef.current.videoWidth;
+          canvas.height = videoRef.current.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+          const base64Image = canvas.toDataURL('image/jpeg', 0.5); // compress a bit
+
+          const res = await proctorAPI.sendFrame(sessionId, base64Image);
+          
+          if (!isMounted) return;
+
+          setProctorWarnings(res.data.warnings);
+          if (res.data.detected_objects && res.data.detected_objects.length > 0 && !res.data.terminate) {
+              setProctorMessage(res.data.message);
+              setTimeout(() => { if (isMounted) setProctorMessage(''); }, 5000); // hide after 5s
+          }
+
+          if (res.data.minor_message && !res.data.terminate) {
+              setMinorMessage(res.data.minor_message);
+              setTimeout(() => { if (isMounted) setMinorMessage(''); }, 4000); // hide after 4s
+          }
+          
+          if (res.data.terminate) {
+            navigate(`/results/${sessionId}?terminated=true`);
+            return; // stop polling
+          }
+        } catch (err) {
+          console.error('Proctoring error:', err);
+        }
+      }
+
+      if (isMounted) {
+        proctorTimer = setTimeout(captureAndSendFrame, 1000); // 1s frequency
+      }
+    };
+
+    proctorTimer = setTimeout(captureAndSendFrame, 1000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(proctorTimer);
+    };
+  }, [sessionId, navigate]);
 
   // Handle TTS when question changes
   useEffect(() => {
@@ -299,6 +436,29 @@ export default function VivaInterface({ user }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             {error}
+          </div>
+        )}
+
+        {/* Proctoring Warning Overlay */}
+        {proctorMessage && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-fade-in border-2 border-red-400">
+            <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg">Proctoring Warning ({proctorWarnings}/3)</span>
+              <span className="text-sm opacity-90">{proctorMessage}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Behavioral Guidance Banner (Minor Issues) */}
+        {minorMessage && (
+          <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] bg-amber-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 animate-slide-down border border-amber-400">
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-bold text-sm tracking-wide">{minorMessage}</span>
           </div>
         )}
 

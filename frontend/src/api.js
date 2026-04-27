@@ -66,5 +66,12 @@ export const vivaAPI = {
     }),
   getResults: (sessionId) => api.get(`/get_results/${sessionId}`),
 };
+export const proctorAPI = {
+  sendFrame: (sessionId, imageData) =>
+    api.post('/proctor/frame', {
+      session_id: sessionId,
+      image_data: imageData,
+    }),
+};
 
 export default api;
