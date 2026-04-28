@@ -16,10 +16,10 @@ export default function Login({ onLogin }) {
     setError('');
 
     if (role === 'Admin') {
-      if (username === 'admin' && password === 'admin') {
+      if (username === 'admin' && password === 'Admin@123') {
         navigate('/admin');
       } else {
-        setError('Invalid admin credentials. Use admin/admin');
+        setError('Invalid admin credentials. Use admin / Admin@123');
       }
       return;
     }

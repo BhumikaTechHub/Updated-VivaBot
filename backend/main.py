@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
 from routers import auth_router, admin_router, viva_router, proctor_router
 from config import CORS_ORIGINS
+from routers.admin_router import router as admin_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -29,7 +30,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth_router.router)
-app.include_router(admin_router.router)
+app.include_router(admin_router)
 app.include_router(viva_router.router)
 app.include_router(proctor_router.router)
 

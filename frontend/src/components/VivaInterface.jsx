@@ -18,7 +18,13 @@ export default function VivaInterface({ user }) {
   const [showFeedback, setShowFeedback] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
+  // Secure exam mode
+  const [secureViolations, setSecureViolations] = useState(0);
+  const [secureWarning, setSecureWarning] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const MAX_SECURE_VIOLATIONS = 5;
+
   const [isAvatarSpeaking, setIsAvatarSpeaking] = useState(false);
   const [proctorWarnings, setProctorWarnings] = useState(0);
   const [proctorMessage, setProctorMessage] = useState('');
@@ -231,6 +237,73 @@ export default function VivaInterface({ user }) {
     };
   }, [sessionId, navigate]);
 
+  // ── Secure Exam Mode ──────────────────────────────────────────
+  useEffect(() => {
+    let violationCount = 0;
+
+    const showViolation = (msg) => {
+      violationCount += 1;
+      setSecureViolations(violationCount);
+      setSecureWarning(msg);
+      setTimeout(() => setSecureWarning(''), 5000);
+      if (violationCount >= MAX_SECURE_VIOLATIONS) {
+        navigate(`/results/${sessionId}?terminated=true`);
+      }
+    };
+
+    // Enter fullscreen
+    const enterFullscreen = () => {
+      const el = document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+      if (req) req.call(el).catch(() => {});
+    };
+    enterFullscreen();
+
+    // Fullscreen change
+    const onFullscreenChange = () => {
+      const inFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      setIsFullscreen(inFS);
+      if (!inFS) {
+        showViolation('⚠️ You exited fullscreen! Re-entering secure mode...');
+        setTimeout(enterFullscreen, 800);
+      }
+    };
+
+    // Tab / window visibility
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        showViolation('⚠️ Tab switching is not allowed during the exam!');
+      }
+    };
+
+    // Keyboard restrictions
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        showViolation('⚠️ Pressing Escape is not allowed during the exam!');
+      }
+      // Ctrl+Tab, Alt+Tab combos (partial; browser limits full interception)
+      if ((e.altKey && e.key === 'Tab') || (e.ctrlKey && e.key === 'Tab')) {
+        e.preventDefault();
+        showViolation('⚠️ Switching windows is not allowed during the exam!');
+      }
+    };
+
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.removeEventListener('keydown', onKeyDown);
+      // Exit fullscreen on unmount
+      if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    };
+  }, [sessionId, navigate]);
+
   // Handle TTS when question changes
   useEffect(() => {
     if (question && question.question_text) {
@@ -410,16 +483,29 @@ export default function VivaInterface({ user }) {
               </div>
               <span className="text-sm font-bold text-slate-900">{user.full_name}</span>
             </div>
-            {question && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question</span>
-                <span className="text-lg font-extrabold text-primary-600">
-                  {question.question_number}
-                </span>
-                <span className="text-slate-400">/</span>
-                <span className="text-sm font-semibold text-slate-500">{question.total_questions}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {question && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question</span>
+                  <span className="text-lg font-extrabold text-primary-600">{question.question_number}</span>
+                  <span className="text-slate-400">/</span>
+                  <span className="text-sm font-semibold text-slate-500">{question.total_questions}</span>
+                </div>
+              )}
+              {/* Secure Mode Badge */}
+              <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                secureViolations === 0
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : secureViolations < MAX_SECURE_VIOLATIONS
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}>
+                <span className={`w-2 h-2 rounded-full animate-pulse ${
+                  secureViolations === 0 ? 'bg-emerald-500' : secureViolations < MAX_SECURE_VIOLATIONS ? 'bg-amber-500' : 'bg-rose-500'
+                }`}/>
+                {secureViolations === 0 ? 'Secure Mode Active' : `Violations: ${secureViolations}/${MAX_SECURE_VIOLATIONS}`}
+              </span>
+            </div>
           </div>
           {/* Progress bar */}
           <div className="progress-track">
@@ -459,6 +545,21 @@ export default function VivaInterface({ user }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="font-bold text-sm tracking-wide">{minorMessage}</span>
+          </div>
+        )}
+
+        {/* Secure Exam Violation Warning */}
+        {secureWarning && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] w-full max-w-lg px-4">
+            <div className="bg-rose-600 text-white px-5 py-3 rounded-xl shadow-2xl border border-rose-400 flex items-center gap-3">
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+              </svg>
+              <div className="flex-1">
+                <p className="font-bold text-sm leading-tight">{secureWarning}</p>
+                <p className="text-xs text-rose-200 mt-0.5">Violation {secureViolations}/{MAX_SECURE_VIOLATIONS} — Exam will terminate at {MAX_SECURE_VIOLATIONS}.</p>
+              </div>
+            </div>
           </div>
         )}
 

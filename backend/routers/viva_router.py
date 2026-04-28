@@ -11,6 +11,7 @@ from database import get_db, Question, VivaSession, SessionQuestion, Result, Stu
 from auth import get_current_student
 from models.answer_evaluator import evaluate_answer
 from config import QUESTIONS_PER_VIVA
+from routers.admin_router import update_student_status
 
 router = APIRouter(prefix="/api", tags=["Viva"])
 
@@ -108,6 +109,9 @@ async def start_viva(
     
     db.commit()
     db.refresh(session)
+    
+    # Update admin dashboard: mark student as In Exam
+    update_student_status(str(student.id), "In Exam")
     
     return StartVivaResponse(
         session_id=session.id,
@@ -211,6 +215,8 @@ async def submit_answer(
     
     if is_last:
         session.completed = True
+        # Update admin dashboard: mark student as Online (done with exam)
+        update_student_status(str(student.id), "Online")
     
     db.commit()
     

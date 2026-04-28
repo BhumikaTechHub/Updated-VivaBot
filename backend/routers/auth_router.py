@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db, Student
 from auth import verify_password, create_access_token
+from routers.admin_router import register_student, update_student_status
 
 router = APIRouter(prefix="/api", tags=["Authentication"])
 
@@ -42,6 +43,10 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
         )
     
     access_token = create_access_token(data={"sub": student.username})
+    
+    # Register student in admin dashboard tracking
+    register_student(str(student.id), student.full_name or student.username)
+    update_student_status(str(student.id), "Online")
     
     return LoginResponse(
         access_token=access_token,

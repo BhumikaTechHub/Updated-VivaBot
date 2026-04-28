@@ -33,14 +33,13 @@ def detect_restricted_objects(base64_img: str):
         if "," in base64_img:
             base64_img = base64_img.split(",")[1]
             
-        img_bytes = base64.b64decode(base64_img)
-        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-        
-        # Use higher resolution (640) to detect small objects like phones/books
-        img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+  
+        img_array = np.frombuffer(base64.b64decode(base64_img), np.uint8)
+        img_cv = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
 
         # Run inference with standard 640 resolution
-        results = model(img_cv, verbose=False, imgsz=640)
+        results = model(img_cv, verbose=False, imgsz=320)
         
         critical_issues = []
         minor_issues = []

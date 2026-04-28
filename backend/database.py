@@ -124,8 +124,8 @@ def init_db():
                 students.append(student)
             db.add_all(students)
             db.commit()
-            print("✅ Created 10 predefined student accounts")
+            print(" Created 10 predefined student accounts")
         else:
-            print(f"ℹ️  {existing} student accounts already exist")
+            print(f"  {existing} student accounts already exist")
     finally:
         db.close()

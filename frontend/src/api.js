@@ -37,6 +37,7 @@ export const authAPI = {
 };
 
 export const adminAPI = {
+  // ---------------- EXISTING ----------------
   uploadPDF: (file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -44,9 +45,26 @@ export const adminAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+
   generateQuestions: () => api.post('/generate_questions'),
   getStats: () => api.get('/stats'),
   getQuestions: () => api.get('/questions'),
+
+
+  getStudents: () => api.get('/admin/students'),
+
+ 
+  getAlerts: () => api.get('/admin/alerts'),
+
+  getDashboardStats: () => api.get('/admin/stats'),
+
+  startExam: () => api.post('/admin/exam/start'),
+  endExam: () => api.post('/admin/exam/end'),
+
+  blockStudent: (studentId) =>
+    api.post(`/admin/student/block/${studentId}`),
+
+  generateReport: () => api.get('/admin/report'),
 };
 
 export const vivaAPI = {
