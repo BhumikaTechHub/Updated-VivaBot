@@ -9,7 +9,7 @@ from database import get_db, Student
 from auth import verify_password, create_access_token
 from routers.admin_router import register_student, update_student_status
 
-router = APIRouter(prefix="/api", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 
 class LoginRequest(BaseModel):

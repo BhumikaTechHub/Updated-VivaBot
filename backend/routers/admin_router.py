@@ -11,8 +11,7 @@ from models.pdf_processor import process_pdf
 from models.question_generator import generate_all_questions
 from config import UPLOAD_DIR
 
-router = APIRouter(prefix="/api", tags=["Admin"])
-
+router = APIRouter(tags=["Admin"])
 # =====================================================
 # IN-MEMORY STORE (Dashboard features)
 # =====================================================
@@ -105,6 +104,10 @@ def generate_report():
         {"student": s["name"], "violations": s["violations"], "status": s["status"]}
         for s in students_db.values()
     ]
+
+
+
+
 
 
 # =====================================================

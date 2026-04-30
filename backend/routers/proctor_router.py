@@ -7,7 +7,7 @@ from database import get_db, VivaSession, Student
 from auth import get_current_student
 from models.proctoring import detect_restricted_objects
 
-router = APIRouter(prefix="/api/proctor", tags=["Proctoring"])
+router = APIRouter(prefix="/proctor", tags=["Proctoring"])
 
 class FrameRequest(BaseModel):
     session_id: int

@@ -50,10 +50,12 @@ export const adminAPI = {
   getStats: () => api.get('/stats'),
   getQuestions: () => api.get('/questions'),
 
+  
+
 
   getStudents: () => api.get('/admin/students'),
 
- 
+
   getAlerts: () => api.get('/admin/alerts'),
 
   getDashboardStats: () => api.get('/admin/stats'),

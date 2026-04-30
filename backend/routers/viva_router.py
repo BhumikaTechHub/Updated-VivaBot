@@ -13,7 +13,7 @@ from models.answer_evaluator import evaluate_answer
 from config import QUESTIONS_PER_VIVA
 from routers.admin_router import update_student_status
 
-router = APIRouter(prefix="/api", tags=["Viva"])
+router = APIRouter(tags=["Viva"])
 
 
 class StartVivaResponse(BaseModel):

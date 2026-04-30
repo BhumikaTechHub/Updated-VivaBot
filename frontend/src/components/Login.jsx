@@ -19,7 +19,7 @@ export default function Login({ onLogin }) {
       if (username === 'admin' && password === 'Admin@123') {
         navigate('/admin');
       } else {
-        setError('Invalid admin credentials. Use admin / Admin@123');
+        setError('Invalid credentials. Please try again.');
       }
       return;
     }
