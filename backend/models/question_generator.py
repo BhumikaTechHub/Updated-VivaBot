@@ -141,20 +141,22 @@ def extract_existing_questions(text: str) -> List[Dict[str, str]]:
             if has_alpha:
 
                 start = has_alpha.start()
-
                 q_text = body[:start].strip()
                 option_text = body[start:].strip()
 
-                pattern = r'([a-eA-E])[\.\)]\s(.*?)(?=(?:\n[a-eA-E][\.\)]\s)|$)'
+                # Clean option text to prevent truncation across line breaks
+                option_text = option_text.replace('\n', ' ')
+                option_text = re.sub(r'\s+', ' ', option_text)
+
+                # Lookahead for the next option or end of string
+                pattern = r'\b([a-eA-E])[\.\)]\s+(.*?)(?=\s+\b[a-eA-E][\.\)]\s+|$)'
                 found = re.findall(pattern, option_text, flags=re.DOTALL)
 
                 options = []
-
                 for label, val in found:
-                    val = re.sub(r'\s+', ' ', val).strip()
-
+                    val = val.strip()
                     if val:
-                        options.append(f"{label.lower()}. {val}")
+                        options.append(f"{label.upper()}. {val}")
 
             # -------------------------
             # Numbered options
@@ -162,37 +164,42 @@ def extract_existing_questions(text: str) -> List[Dict[str, str]]:
             else:
 
                 start = has_num.start()
-
                 q_text = body[:start].strip()
                 option_text = body[start:].strip()
 
-                pattern = r'(\d+)[\.\)]\s(.*?)(?=(?:\n\d+[\.\)]\s)|$)'
+                # Clean option text to prevent truncation
+                option_text = option_text.replace('\n', ' ')
+                option_text = re.sub(r'\s+', ' ', option_text)
+
+                pattern = r'\b(\d+)[\.\)]\s+(.*?)(?=\s+\b\d+[\.\)]\s+|$)'
                 found = re.findall(pattern, option_text, flags=re.DOTALL)
 
-                labels = ["a", "b", "c", "d", "e"]
+                labels = ["A", "B", "C", "D", "E"]
                 options = []
-
                 for i, (_, val) in enumerate(found):
-                    val = re.sub(r'\s+', ' ', val).strip()
-
-                    if i < len(labels):
+                    val = val.strip()
+                    if i < len(labels) and val:
                         options.append(f"{labels[i]}. {val}")
 
+            # Clean and format question text
             q_text = q_text.replace("\n", " ")
             q_text = re.sub(r'\s+', ' ', q_text).strip()
 
             if "?" not in q_text:
                 q_text += "?"
 
+            # VALIDATION: Ensure generated question contains complete options
             if len(options) >= 2 and is_valid_question(q_text):
+                # Ensure options are not just single broken characters
+                if all(len(opt) > 3 for opt in options):
+                    # Enforce structured formatting
+                    final_q = q_text + "\n\n" + "\n".join(options)
 
-                final_q = q_text + "\n\n" + "\n".join(options)
-
-                questions.append({
-                    "question": final_q,
-                    "reference_answer": "",
-                    "context": final_q
-                })
+                    questions.append({
+                        "question": final_q,
+                        "reference_answer": "",
+                        "context": final_q
+                    })
 
         # =================================================
         # DESCRIPTIVE SECTION

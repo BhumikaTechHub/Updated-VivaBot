@@ -73,7 +73,7 @@ export default function Avatar({ isSpeaking }) {
   const eyeRy = blink ? 0.8 : 7;
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 glass-card overflow-hidden h-full min-h-[280px]">
+    <div className="flex flex-col items-center justify-center p-4 glass-card overflow-hidden h-full min-h-0">
       <div className="relative flex items-center justify-center">
         {/* Speaking aura */}
         {isSpeaking && (
@@ -85,7 +85,7 @@ export default function Avatar({ isSpeaking }) {
 
         <svg
           viewBox="0 0 200 240"
-          className="relative z-10 w-48 h-56"
+          className="relative z-10 w-full h-full max-w-[280px] max-h-[320px] object-contain"
           style={{ transform: `translateY(${breathe}px)` }}
         >
           <defs>

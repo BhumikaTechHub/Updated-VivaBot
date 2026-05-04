@@ -12,9 +12,14 @@ import numpy as np
 from typing import Dict, List, Set
 from sentence_transformers import SentenceTransformer
 from config import SENTENCE_MODEL_NAME
+import nltk
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
 
 # Global model cache
 _model = None
+_lemmatizer = None
+_nltk_initialized = False
 
 # Common stop words to ignore during keyword matching
 _STOP_WORDS = {
@@ -33,6 +38,18 @@ _STOP_WORDS = {
     'also', 'then', 'there', 'here', 'up', 'out', 'down',
 }
 
+def _ensure_nltk_data():
+    """Ensure NLTK data is downloaded for lemmatization and stopwords."""
+    global _nltk_initialized, _lemmatizer
+    if not _nltk_initialized:
+        for pkg in ['wordnet', 'omw-1.4', 'stopwords']:
+            try:
+                nltk.data.find(f'corpora/{pkg}')
+            except LookupError:
+                nltk.download(pkg, quiet=True)
+        _lemmatizer = WordNetLemmatizer()
+        _nltk_initialized = True
+
 
 def load_model():
     """Load the Sentence Transformer model (cached)."""
@@ -45,11 +62,7 @@ def load_model():
 
 
 def compute_cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
-    """
-    Compute cosine similarity between two vectors.
-
-    Formula: cos(A,B) = (A · B) / (||A|| × ||B||)
-    """
+    """Compute cosine similarity between two vectors."""
     dot_product = np.dot(vec_a, vec_b)
     norm_a = np.linalg.norm(vec_a)
     norm_b = np.linalg.norm(vec_b)
@@ -60,18 +73,33 @@ def compute_cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
     return float(dot_product / (norm_a * norm_b))
 
 
-def extract_keywords(text: str) -> Set[str]:
-    """Extract meaningful keywords from text (no stop words, lowered)."""
+def normalize_text(text: str) -> str:
+    """
+    Normalize text for concept-level evaluation:
+    - lowercase
+    - extract words
+    - remove extended stopwords
+    - lemmatize
+    """
+    _ensure_nltk_data()
+    # Combine custom stopwords with NLTK stopwords for maximum filtering
+    all_stop_words = _STOP_WORDS.union(set(stopwords.words('english')))
+    
     words = re.findall(r'[a-zA-Z]+', text.lower())
-    return {w for w in words if w not in _STOP_WORDS and len(w) > 2}
+    lemmatized = [_lemmatizer.lemmatize(w) for w in words if w not in all_stop_words and len(w) > 2]
+    return " ".join(lemmatized)
+
+
+def extract_keywords(text: str) -> Set[str]:
+    """Extract meaningful keywords from text."""
+    # normalize_text already handles lowering, stopwords, and lemmatization
+    return set(normalize_text(text).split())
 
 
 def compute_keyword_overlap(student_answer: str, reference_answer: str) -> float:
     """
     Compute what fraction of the reference answer's key terms
     appear in the student's answer.
-
-    Returns a value between 0.0 and 1.0.
     """
     ref_keywords = extract_keywords(reference_answer)
     student_keywords = extract_keywords(student_answer)
@@ -86,38 +114,21 @@ def compute_keyword_overlap(student_answer: str, reference_answer: str) -> float
 def combined_score(similarity: float, keyword_overlap: float) -> float:
     """
     Combine semantic similarity and keyword overlap into a final score.
-
-    Strategy:
-    - Use the HIGHER of (semantic_score, keyword_boosted_score)
-    - This ensures short but correct answers are not penalized
-    - Keyword overlap boosts the semantic similarity when key terms match
-
-    Example: "data link layer" vs long reference about data link layer
-    - Semantic similarity might be ~0.65 (penalized by length mismatch)
-    - Keyword overlap might be ~0.8 (key terms match well)
-    - Combined takes the best signal from both approaches
+    Dynamically weights based on overlap.
     """
-    # Pure semantic score
     semantic_score = similarity_to_score(similarity)
 
-    # Keyword-boosted score: if student hits the key terms, boost heavily
     if keyword_overlap >= 0.5:
-        # Student mentioned at least half the key concepts
-        # Boost: blend keyword overlap into the score
         keyword_score = keyword_overlap * 10.0
-        # Weighted combination: semantic + keyword
         boosted = 0.5 * semantic_score + 0.5 * keyword_score
     elif keyword_overlap >= 0.3:
         boosted = 0.6 * semantic_score + 0.4 * (keyword_overlap * 10.0)
     else:
         boosted = semantic_score
 
-    # Take the higher of pure semantic and boosted
     final = max(semantic_score, boosted)
 
-    # Extra boost: if keyword overlap is very high (>0.7),
-    # the student clearly knows the answer
-    if keyword_overlap >= 0.7 and similarity >= 0.5:
+    if keyword_overlap >= 0.7 and similarity >= 0.4:
         final = max(final, 8.5 + keyword_overlap * 1.5)
 
     return min(10.0, max(0.0, round(final, 1)))
@@ -126,47 +137,28 @@ def combined_score(similarity: float, keyword_overlap: float) -> float:
 def similarity_to_score(similarity: float) -> float:
     """
     Convert cosine similarity to a score out of 10.
-
-    More lenient mapping (adjusted for real-world viva answers):
-    > 0.75 → 9-10
-    > 0.55 → 7-9
-    > 0.40 → 5-7
-    > 0.25 → 3-5
-    <= 0.25 → 1-3
+    Dynamically adjusted for leniency because embeddings of lemmatized text
+    (without stop words) often have slightly lower absolute similarities than natural language.
     """
-    if similarity > 0.75:
-        # Map 0.75-1.0 to 9-10
-        return 9.0 + (similarity - 0.75) * 4.0
-    elif similarity > 0.55:
-        # Map 0.55-0.75 to 7-9
-        return 7.0 + (similarity - 0.55) * 10.0
-    elif similarity > 0.40:
-        # Map 0.40-0.55 to 5-7
-        return 5.0 + (similarity - 0.40) * 13.3
-    elif similarity > 0.25:
-        # Map 0.25-0.40 to 3-5
-        return 3.0 + (similarity - 0.25) * 13.3
+    if similarity > 0.70:
+        return 9.0 + (similarity - 0.70) * 3.33
+    elif similarity > 0.50:
+        return 7.0 + (similarity - 0.50) * 10.0
+    elif similarity > 0.35:
+        return 5.0 + (similarity - 0.35) * 13.3
+    elif similarity > 0.20:
+        return 3.0 + (similarity - 0.20) * 13.3
     else:
-        # Map 0.0-0.25 to 1-3
-        return 1.0 + similarity * 8.0
+        return 1.0 + similarity * 10.0
 
 
 def evaluate_answer(student_answer: str, reference_answer: str) -> Dict:
     """
     Evaluate a student's answer against the reference answer.
-
-    Pipeline:
-    1. Student Answer → Embedding + Keywords
-    2. Reference Answer → Embedding + Keywords
-    3. Semantic Similarity (cosine)
-    4. Keyword Overlap (term matching)
-    5. Combined Score (best of both signals)
-
-    Returns dict with similarity, score, grade, and feedback.
+    Ensures comparison of concept-level meaning rather than surface syntax.
     """
     model = load_model()
 
-    # Handle empty answers
     if not student_answer or not student_answer.strip():
         return {
             "similarity": 0.0,
@@ -175,7 +167,6 @@ def evaluate_answer(student_answer: str, reference_answer: str) -> Dict:
             "feedback": "No answer was provided."
         }
 
-    # Detect "I don't know" type answers → treat as skip
     answer_lower = student_answer.strip().lower()
     skip_phrases = [
         "i don't know", "i dont know", "idk", "no idea", "not sure",
@@ -193,20 +184,31 @@ def evaluate_answer(student_answer: str, reference_answer: str) -> Dict:
             "feedback": "Question was skipped."
         }
 
-    # Step 1: Compute semantic similarity via embeddings
-    student_embedding = model.encode(student_answer)
-    reference_embedding = model.encode(reference_answer)
+    # Step 1: Normalize text to extract concept-level meaning
+    norm_student = normalize_text(student_answer)
+    norm_reference = normalize_text(reference_answer)
+
+    if not norm_student and student_answer:
+        return {
+            "similarity": 0.0,
+            "score": 1.0,
+            "grade": "Poor",
+            "feedback": "The answer did not contain sufficient meaningful content."
+        }
+
+    # Step 2: Compute semantic similarity via embeddings on normalized concept text
+    student_embedding = model.encode(norm_student)
+    reference_embedding = model.encode(norm_reference)
 
     similarity = compute_cosine_similarity(student_embedding, reference_embedding)
     similarity = max(0.0, min(1.0, similarity))
 
-    # Step 2: Compute keyword overlap
+    # Step 3: Compute keyword overlap (uses normalized text internally)
     keyword_overlap = compute_keyword_overlap(student_answer, reference_answer)
 
-    # Step 3: Combine both signals for a fair score
+    # Step 4: Combine both signals for a robust semantic score
     score = combined_score(similarity, keyword_overlap)
 
-    # Determine grade
     if score >= 9:
         grade = "Excellent"
         feedback = "Outstanding answer! Very accurate and comprehensive."

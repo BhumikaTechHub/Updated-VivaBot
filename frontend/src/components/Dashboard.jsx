@@ -345,8 +345,7 @@ export default function Dashboard({ user, onLogout }) {
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Exam Info</h3>
               <div className="space-y-4">
                 {[
-                  { label: 'Total Questions', value: '10', icon: '📝' },
-                  { label: 'Duration', value: '~10 min', icon: '⏱️' },
+                  { label: 'Total Questions', value: '5', icon: '📝' },
                   { label: 'Mode', value: 'AI Evaluated', icon: '🤖' },
                   { label: 'Subject', value: 'NLP', icon: '📚' },
                 ].map(item => (
