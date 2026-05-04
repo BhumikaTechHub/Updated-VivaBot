@@ -132,17 +132,17 @@ export default function VivaInterface({ user }) {
       }
 
       const landmarks = results.multiFaceLandmarks[0];
-      
+
       // Calculate head pose (simplified)
       // Landmarks: 1=nose, 33=left eye, 263=right eye, 61=left mouth, 291=right mouth
       const nose = landmarks[1];
       const leftEye = landmarks[33];
       const rightEye = landmarks[263];
-      
+
       // Yaw (side looking)
       const eyeCenter = (leftEye.x + rightEye.x) / 2;
       const yaw = (nose.x - eyeCenter) * 100;
-      
+
       // Pitch (looking up/down)
       const pitch = (nose.y - (leftEye.y + rightEye.y) / 2) * 100;
 
@@ -201,20 +201,20 @@ export default function VivaInterface({ user }) {
           const base64Image = canvas.toDataURL('image/jpeg', 0.5); // compress a bit
 
           const res = await proctorAPI.sendFrame(sessionId, base64Image);
-          
+
           if (!isMounted) return;
 
           setProctorWarnings(res.data.warnings);
           if (res.data.detected_objects && res.data.detected_objects.length > 0 && !res.data.terminate) {
-              setProctorMessage(res.data.message);
-              setTimeout(() => { if (isMounted) setProctorMessage(''); }, 5000); // hide after 5s
+            setProctorMessage(res.data.message);
+            setTimeout(() => { if (isMounted) setProctorMessage(''); }, 5000); // hide after 5s
           }
 
           if (res.data.minor_message && !res.data.terminate) {
-              setMinorMessage(res.data.minor_message);
-              setTimeout(() => { if (isMounted) setMinorMessage(''); }, 4000); // hide after 4s
+            setMinorMessage(res.data.minor_message);
+            setTimeout(() => { if (isMounted) setMinorMessage(''); }, 4000); // hide after 4s
           }
-          
+
           if (res.data.terminate) {
             navigate(`/results/${sessionId}?terminated=true`);
             return; // stop polling
@@ -255,7 +255,7 @@ export default function VivaInterface({ user }) {
     const enterFullscreen = () => {
       const el = document.documentElement;
       const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-      if (req) req.call(el).catch(() => {});
+      if (req) req.call(el).catch(() => { });
     };
     enterFullscreen();
 
@@ -300,7 +300,7 @@ export default function VivaInterface({ user }) {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       document.removeEventListener('keydown', onKeyDown);
       // Exit fullscreen on unmount
-      if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+      if (document.exitFullscreen) document.exitFullscreen().catch(() => { });
     };
   }, [sessionId, navigate]);
 
@@ -308,9 +308,9 @@ export default function VivaInterface({ user }) {
   useEffect(() => {
     if (question && question.question_text) {
       window.speechSynthesis.cancel();
-      
+
       const utterance = new SpeechSynthesisUtterance(question.question_text);
-      
+
       // Select voice
       const voices = window.speechSynthesis.getVoices();
       const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
@@ -318,7 +318,7 @@ export default function VivaInterface({ user }) {
         const preferredVoice = englishVoices.find(v => v.name.includes('Google US English') || v.name.includes('Female')) || englishVoices[0];
         utterance.voice = preferredVoice;
       }
-      
+
       utterance.rate = 0.95;
 
       utterance.onstart = () => setIsAvatarSpeaking(true);
@@ -337,7 +337,7 @@ export default function VivaInterface({ user }) {
           }, 300);
         }
       };
-      
+
       utterance.onerror = () => setIsAvatarSpeaking(false);
 
       setTimeout(() => {
@@ -470,7 +470,7 @@ export default function VivaInterface({ user }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
       {/* Top Bar */}
       <header className="border-b border-slate-200/50 bg-white/50 backdrop-blur-lg">
         <div className="w-full px-8 py-4">
@@ -493,16 +493,14 @@ export default function VivaInterface({ user }) {
                 </div>
               )}
               {/* Secure Mode Badge */}
-              <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-                secureViolations === 0
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : secureViolations < MAX_SECURE_VIOLATIONS
+              <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${secureViolations === 0
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : secureViolations < MAX_SECURE_VIOLATIONS
                   ? 'bg-amber-50 text-amber-700 border-amber-200'
                   : 'bg-rose-50 text-rose-700 border-rose-200'
-              }`}>
-                <span className={`w-2 h-2 rounded-full animate-pulse ${
-                  secureViolations === 0 ? 'bg-emerald-500' : secureViolations < MAX_SECURE_VIOLATIONS ? 'bg-amber-500' : 'bg-rose-500'
-                }`}/>
+                }`}>
+                <span className={`w-2 h-2 rounded-full animate-pulse ${secureViolations === 0 ? 'bg-emerald-500' : secureViolations < MAX_SECURE_VIOLATIONS ? 'bg-amber-500' : 'bg-rose-500'
+                  }`} />
                 {secureViolations === 0 ? 'Secure Mode Active' : `Violations: ${secureViolations}/${MAX_SECURE_VIOLATIONS}`}
               </span>
             </div>
@@ -515,7 +513,7 @@ export default function VivaInterface({ user }) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-8 py-8 w-full">
+      <main className="flex-1 overflow-y-auto px-6 py-12 w-full no-scrollbar flex flex-col justify-center items-center">
         {error && (
           <div className="mb-6 w-full flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm animate-fade-in">
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -553,7 +551,7 @@ export default function VivaInterface({ user }) {
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] w-full max-w-lg px-4">
             <div className="bg-rose-600 text-white px-5 py-3 rounded-xl shadow-2xl border border-rose-400 flex items-center gap-3">
               <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
               <div className="flex-1">
                 <p className="font-bold text-sm leading-tight">{secureWarning}</p>
@@ -567,9 +565,8 @@ export default function VivaInterface({ user }) {
         {showFeedback && feedback && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
             <div className="glass-card p-8 max-w-sm text-center">
-              <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                feedback.grade === 'Skipped' ? 'bg-slate-200' : feedback.score >= 7 ? 'bg-accent-100 text-accent-600' : feedback.score >= 5 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'
-              }`}>
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${feedback.grade === 'Skipped' ? 'bg-slate-200' : feedback.score >= 7 ? 'bg-accent-100 text-accent-600' : feedback.score >= 5 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'
+                }`}>
                 <span className="text-2xl font-bold">{feedback.grade === 'Skipped' ? '⏭' : feedback.score >= 7 ? '✓' : feedback.score >= 5 ? '~' : '✗'}</span>
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-1">{feedback.grade === 'Skipped' ? 'Question Skipped' : 'Answer Recorded'}</h3>
@@ -578,9 +575,8 @@ export default function VivaInterface({ user }) {
                 <span className="text-3xl font-bold text-primary-600">{feedback.score}</span>
                 <span className="text-slate-400 font-bold">/10</span>
               </div>
-              <p className={`text-sm font-bold mt-2 ${
-                feedback.score >= 7 ? 'text-accent-600' : feedback.score >= 5 ? 'text-amber-600' : 'text-red-600'
-              }`}>
+              <p className={`text-sm font-bold mt-2 ${feedback.score >= 7 ? 'text-accent-600' : feedback.score >= 5 ? 'text-amber-600' : 'text-red-600'
+                }`}>
                 {feedback.grade}
               </p>
               {!feedback.is_last && (
@@ -594,38 +590,41 @@ export default function VivaInterface({ user }) {
         {question && (
           <div className="w-full animate-fade-in">
             {/* Avatar and Webcam */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <Avatar isSpeaking={isAvatarSpeaking} />
-              
-              <div className="flex flex-col items-center justify-center p-6 glass-card overflow-hidden min-h-[250px]">
-                <div className="relative w-full h-full min-h-[160px] aspect-video rounded-xl overflow-hidden bg-slate-800 border border-slate-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 h-[260px]">
+              <div className="glass-card h-full flex items-center justify-center bg-white/40">
+                <Avatar isSpeaking={isAvatarSpeaking} />
+              </div>
+
+              <div className="glass-card overflow-hidden h-full relative">
+                <div className="w-full h-full bg-slate-800">
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
-                    className="absolute inset-0 w-full h-full object-cover transform -scale-x-100"
+                    className="w-full h-full object-cover transform -scale-x-100"
                   />
                   {!streamRef.current && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-slate-400 text-sm font-medium">Initializing Camera...</span>
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-800/50 backdrop-blur-sm">
+                      <span className="text-white text-xs font-bold uppercase tracking-wider">Initializing Camera...</span>
                     </div>
                   )}
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-accent-500 animate-pulse" />
-                  <span className="text-sm font-bold text-slate-700">Live Camera</span>
+                  {/* Overlay Camera Status */}
+                  <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+                    <span className="text-[11px] font-black text-white uppercase tracking-widest">Live Camera</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="glass-card p-8 mb-8">
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-primary-600">
+                <span className="text-[11px] font-black uppercase tracking-wider text-primary-600 bg-primary-50 px-3 py-1 rounded">
                   Question {question.question_number} of {question.total_questions}
                 </span>
                 {question.is_last && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 font-bold border border-amber-200">
+                  <span className="text-[11px] px-3 py-1 rounded-full bg-amber-100 text-amber-600 font-bold border border-amber-200">
                     Last Question
                   </span>
                 )}
@@ -637,48 +636,36 @@ export default function VivaInterface({ user }) {
 
             {/* Microphone & Transcription */}
             <div className="glass-card p-8">
-              <div className="flex flex-col items-center mb-6">
+              <div className="flex flex-col items-center mb-8">
                 {/* Mic Button */}
                 <button
                   id="mic-btn"
                   onClick={toggleListening}
                   disabled={submitting}
-                  className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    isListening
-                      ? 'bg-red-500 shadow-lg shadow-red-500/30 mic-pulse'
-                      : 'bg-gradient-to-br from-primary-500 to-purple-600 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-105'
-                  }`}
+                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 ${isListening
+                    ? 'bg-red-500 shadow-lg shadow-red-500/30 mic-pulse'
+                    : 'bg-gradient-to-br from-primary-500 to-purple-600 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-105'
+                    }`}
                 >
-                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
                   </svg>
                 </button>
-                <p className="text-sm font-medium text-slate-500 mt-3">
-                  {isListening ? (
-                    <span className="text-red-500 font-bold flex items-center gap-2">
-                      <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                      Recording... Click to stop
-                    </span>
-                  ) : (
-                    'Click to start recording'
-                  )}
+                <p className="text-sm font-bold text-slate-500 mt-4 uppercase tracking-widest">
+                  {isListening ? 'Recording Answer...' : 'Click to start recording'}
                 </p>
               </div>
 
               {/* Transcription Area */}
-              <div className="mb-6">
-                <label className="block text-sm font-bold text-slate-500 mb-2">
-                  {transcript ? 'Your Answer:' : 'Detected Answer:'}
-                </label>
-                <div className={`min-h-[120px] p-4 rounded-xl border transition-all ${
-                  isListening
-                    ? 'bg-red-50 border-red-300'
-                    : 'bg-white/60 border-slate-200'
-                }`}>
+              <div className="mb-8">
+                <div className={`min-h-[140px] p-6 rounded-2xl border-2 transition-all ${isListening
+                  ? 'bg-red-50/50 border-red-200'
+                  : 'bg-white/40 border-slate-100'
+                  }`}>
                   {transcript ? (
-                    <p className="text-slate-900 font-medium leading-relaxed">{transcript}</p>
+                    <p className="text-lg text-slate-900 font-bold leading-relaxed">{transcript}</p>
                   ) : (
-                    <p className="text-slate-400 italic font-medium">Your spoken answer will appear here...</p>
+                    <p className="text-base text-slate-400 italic font-medium">Your spoken answer will appear here...</p>
                   )}
                 </div>
               </div>
