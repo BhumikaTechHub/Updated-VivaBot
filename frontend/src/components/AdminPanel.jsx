@@ -138,7 +138,7 @@ export default function AdminPanel() {
       </header>
 
       {/* Scrollable Content */}
-      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+      <main className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
 
         {/* TOP: Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

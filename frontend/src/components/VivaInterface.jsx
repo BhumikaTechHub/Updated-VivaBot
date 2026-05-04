@@ -470,7 +470,11 @@ export default function VivaInterface({ user }) {
   }
 
   return (
+<<<<<<< HEAD
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-slate-50">
+=======
+    <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
+>>>>>>> e3d26e8ddb6e116eca8ab1f367beb01dea8858ff
       {/* Top Bar */}
       <header className="flex-none border-b border-slate-200/50 bg-white/50 backdrop-blur-lg">
         <div className="w-full px-8 py-4">
@@ -513,7 +517,11 @@ export default function VivaInterface({ user }) {
       </header>
 
       {/* Main Content */}
+<<<<<<< HEAD
       <main className="flex-1 flex flex-col w-full max-w-7xl mx-auto px-4 py-4 md:px-8 md:py-6 overflow-hidden min-h-0">
+=======
+      <main className="flex-1 overflow-y-auto px-6 py-12 w-full no-scrollbar flex flex-col justify-center items-center">
+>>>>>>> e3d26e8ddb6e116eca8ab1f367beb01dea8858ff
         {error && (
           <div className="mb-6 w-full flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm animate-fade-in">
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -588,6 +596,7 @@ export default function VivaInterface({ user }) {
 
         {/* Question Card */}
         {question && (
+<<<<<<< HEAD
           <div className="flex-1 flex flex-col w-full min-h-0 animate-fade-in gap-3 md:gap-4">
             {/* TOP SECTION: Avatar and Webcam (60-70%) */}
             <div className="flex-[3] min-h-0 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -595,14 +604,26 @@ export default function VivaInterface({ user }) {
 
               <div className="flex flex-col items-center justify-center p-3 md:p-4 glass-card overflow-hidden h-full w-full">
                 <div className="relative w-full h-full max-w-lg aspect-video rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner flex items-center justify-center">
+=======
+          <div className="w-full animate-fade-in">
+            {/* Avatar and Webcam */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 h-[260px]">
+              <div className="glass-card h-full flex items-center justify-center bg-white/40">
+                <Avatar isSpeaking={isAvatarSpeaking} />
+              </div>
+
+              <div className="glass-card overflow-hidden h-full relative">
+                <div className="w-full h-full bg-slate-800">
+>>>>>>> e3d26e8ddb6e116eca8ab1f367beb01dea8858ff
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
-                    className="absolute inset-0 w-full h-full object-cover transform -scale-x-100"
+                    className="w-full h-full object-cover transform -scale-x-100"
                   />
                   {!streamRef.current && (
+<<<<<<< HEAD
                     <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
                       <span className="text-slate-400 text-sm font-medium">Initializing Camera...</span>
                     </div>
@@ -611,10 +632,22 @@ export default function VivaInterface({ user }) {
                 <div className="mt-3 flex items-center gap-2 flex-none">
                   <div className="w-2 h-2 rounded-full bg-accent-500 animate-pulse" />
                   <span className="text-sm font-bold text-slate-700">Live Camera</span>
+=======
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-800/50 backdrop-blur-sm">
+                      <span className="text-white text-xs font-bold uppercase tracking-wider">Initializing Camera...</span>
+                    </div>
+                  )}
+                  {/* Overlay Camera Status */}
+                  <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+                    <span className="text-[11px] font-black text-white uppercase tracking-widest">Live Camera</span>
+                  </div>
+>>>>>>> e3d26e8ddb6e116eca8ab1f367beb01dea8858ff
                 </div>
               </div>
             </div>
 
+<<<<<<< HEAD
             {/* BOTTOM SECTION: Question & Answer (30-40%) */}
             <div className="flex-[2] flex flex-col min-h-0 gap-3 md:gap-4">
               {/* Question Text */}
@@ -627,6 +660,56 @@ export default function VivaInterface({ user }) {
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 font-bold border border-amber-200">
                       Last Question
                     </span>
+=======
+            <div className="glass-card p-8 mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-[11px] font-black uppercase tracking-wider text-primary-600 bg-primary-50 px-3 py-1 rounded">
+                  Question {question.question_number} of {question.total_questions}
+                </span>
+                {question.is_last && (
+                  <span className="text-[11px] px-3 py-1 rounded-full bg-amber-100 text-amber-600 font-bold border border-amber-200">
+                    Last Question
+                  </span>
+                )}
+              </div>
+              <h2 className="text-xl md:text-2xl font-bold text-slate-900 leading-relaxed">
+                {question.question_text}
+              </h2>
+            </div>
+
+            {/* Microphone & Transcription */}
+            <div className="glass-card p-8">
+              <div className="flex flex-col items-center mb-8">
+                {/* Mic Button */}
+                <button
+                  id="mic-btn"
+                  onClick={toggleListening}
+                  disabled={submitting}
+                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 ${isListening
+                    ? 'bg-red-500 shadow-lg shadow-red-500/30 mic-pulse'
+                    : 'bg-gradient-to-br from-primary-500 to-purple-600 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-105'
+                    }`}
+                >
+                  <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                  </svg>
+                </button>
+                <p className="text-sm font-bold text-slate-500 mt-4 uppercase tracking-widest">
+                  {isListening ? 'Recording Answer...' : 'Click to start recording'}
+                </p>
+              </div>
+
+              {/* Transcription Area */}
+              <div className="mb-8">
+                <div className={`min-h-[140px] p-6 rounded-2xl border-2 transition-all ${isListening
+                  ? 'bg-red-50/50 border-red-200'
+                  : 'bg-white/40 border-slate-100'
+                  }`}>
+                  {transcript ? (
+                    <p className="text-lg text-slate-900 font-bold leading-relaxed">{transcript}</p>
+                  ) : (
+                    <p className="text-base text-slate-400 italic font-medium">Your spoken answer will appear here...</p>
+>>>>>>> e3d26e8ddb6e116eca8ab1f367beb01dea8858ff
                   )}
                 </div>
                 <h2 className="text-base md:text-lg font-bold text-slate-900 leading-snug line-clamp-2">

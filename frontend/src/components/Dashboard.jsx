@@ -142,7 +142,7 @@ export default function Dashboard({ user, onLogout }) {
   const allChecksPassed = systemCheck.camera === 'ok' && systemCheck.mic === 'ok' && systemCheck.internet === 'ok';
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-slate-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
 
       {/* ── Header ── */}
       <header className="flex-none border-b border-slate-200 bg-white px-8 py-4 flex items-center justify-between shadow-sm">
@@ -187,7 +187,7 @@ export default function Dashboard({ user, onLogout }) {
       </header>
 
       {/* ── Main Scrollable Body ── */}
-      <main className="flex-1 overflow-y-auto px-8 py-8">
+      <main className="flex-1 overflow-y-auto px-8 py-8 no-scrollbar">
         {/* Welcome */}
         <div className="mb-8">
           <h2 className="text-3xl font-extrabold text-slate-900 mb-1">
